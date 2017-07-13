@@ -5,8 +5,9 @@ function app() {
 
     constructor() {
       this.elTotalItems = document.body.querySelectorAll('.total-items span')[0];
-      this.elIndex = document.body.querySelectorAll('.index span')[0];
+      this.elIndex = document.body.querySelectorAll('.index .indicator')[0];
       this.elItems = document.body.querySelectorAll('.items')[0];
+      this.elAppContent = document.body.querySelectorAll('.app-content')[0];
     }
 
     render(data, index, totalPages) {
@@ -17,7 +18,7 @@ function app() {
               `<img src="${item.preview.medium}" "alt="stream preview image"/>` +
               `<div class="item-name">${item.channel.display_name}</div>` +
               `<div class="item-info">${item.game} - ${item.channel.views} viewers</div>` +
-              `<div class="item-description">${item.channel.description}</div>` +
+              `<div class="item-description">${item.channel.status}</div>` +
             `</article>`
           );
         }
@@ -25,16 +26,17 @@ function app() {
         var total = data._total;
         var streams = data.streams;
 
-        var totalMarkup = total > 0 ? `${total}` : 0;
-        var indexMarkup = total > 0 ? `${index+1}/${totalPages}` : `1/1`;
+        var totalMarkup = `${total}`;
+        var indexMarkup = `${index+1}/${totalPages}`;
 
         var itemsMarkup = streams.map((item, index) => {
           return itemMarkup(item, index);
-        }).join(",");
+        }).join('');
 
-        this.elTotalItems.innerHTML = indexMarkup;
-        this.elIndex.innerHTML = totalMarkup;
+        this.elTotalItems.innerHTML = totalMarkup;
+        this.elIndex.innerHTML = indexMarkup;
         this.elItems.innerHTML = itemsMarkup;
+        this.elAppContent.classList.add('active');
     }
   };
 
@@ -47,12 +49,14 @@ function app() {
   }
 
   function paginateUp() {
-    index++;
+    if (index <= 0) { return; }
+    index--;
     renderView();
   }
 
   function paginateDown() {
-    index--;
+    if (index+1 >= getTotalPages(limit,total)) { return; }
+    index++;
     renderView();
   }
 
@@ -75,6 +79,7 @@ function app() {
       var contentType = response.headers.get("content-type");
       if(contentType && contentType.indexOf("application/json") !== -1) {
         return response.json().then(function(json) {
+          total = json._total;
           view.render(json, index, getTotalPages(limit, json._total));
         });
       } else {
@@ -97,12 +102,12 @@ function app() {
   var searchInput = '';
   var index = 0;
   var limit = 50;
-   
+  var total = null;
+
   var view = new View();
-  
+
   var elBack = document.body.querySelectorAll('.back')[0];
   var elForward = document.body.querySelectorAll('.forward')[0];
-  var elSearchForm = document.body.querySelectorAll('.search-form')[0];
   var elSearchInput = document.body.querySelectorAll('.search-input')[0];
 
   elBack.addEventListener('click', paginateUp);

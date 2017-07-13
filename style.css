@@ -1,3 +1,126 @@
 body {
-  background: #2C2640;
+  margin: 0;
+  padding: 0;
 }
+
+header {
+  margin: 0;
+  padding: 0;
+  background: #2C2640;
+  width: 100%;
+  float: left;
+}
+
+input {
+  width: 200px;
+  height: 24px;
+  font-size: 15px;
+  line-height: 24px;
+  text-indent: 25px;
+}
+
+i {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+    cursor: pointer;
+}
+
+.right {
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+}
+
+.left {
+    transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+}
+
+.search-form {
+  width: 800px;
+  margin: 20px auto;
+  position: relative;
+}
+
+.search-form figure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 4px;
+}
+
+.app-content {
+  background: white;
+  visibility: hidden;
+  position: relative;
+  float: left;
+  width: 100%;
+}
+
+.app-content.active {
+  visibility: visible;
+}
+
+.pagination {
+  position: relative;
+  width: 800px;
+  margin: 10px auto;
+  box-sizing: border-box;  
+  padding: 0 5px;
+}
+
+.pagination > div {
+  position: absolute;
+}
+
+.pagination .total-items {
+  left: 0;
+}
+
+.pagination .index {
+  right: 0;
+}
+
+.items {
+  float: left;
+  margin: 29px 0;
+  width: 100%;
+  border-top: 1px solid #2C2640;
+}
+
+.item {
+  box-sizing: border-box;
+  width: 800px;
+  margin: 20px auto 20px;
+  background: #F5F5F5;	
+  position: relative;
+  height: 180px;
+  width: 780px;
+  box-shadow: 1px 1px 1px 1px lightgrey;
+}
+
+.item > div {
+  margin: 15px 340px 0px;
+  float: left;
+  width: 400px;
+}
+
+.item img {
+  position: absolute;
+  left: 0;
+  width: 320px;
+  height: 180px;
+}
+
+.item-name {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.index span {
+  display: inline-block;
+}
+
+
+
