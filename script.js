@@ -1,18 +1,52 @@
 "use strict";
 
-function app() {
+function app(clientId) {
   var View = class {
 
-    constructor() {
+    constructor(limit) {
+      this.total = 0;
+      this.index = 0;
+      this.limit = limit || 50;
+
       this.elTotalItems = document.body.querySelectorAll('.total-items span')[0];
       this.elIndex = document.body.querySelectorAll('.index .indicator')[0];
       this.elItems = document.body.querySelectorAll('.items')[0];
       this.elAppContent = document.body.querySelectorAll('.app-content')[0];
+      this.elBack = document.body.querySelectorAll('.back')[0];
+      this.elForward = document.body.querySelectorAll('.forward')[0];
+
+      this.elBack.addEventListener('click', this.paginateUp);
+      this.elForward.addEventListener('click', this.paginateDown);
     }
 
-    render(data, index, totalPages) {
+    getTotalPages() {
+      return 3;
+      // return Math.ceil(this.total/this.limit);
+    }
 
-      function itemMarkup(item) {
+    paginateUp() {
+      if (this.index <= 0) { return; }
+      this.index--;
+      this.render();
+    }
+
+    paginateDown() {
+      if (this.index+1 >= this.getTotalPages()) { return; }
+      this.index++;
+      this.render();
+    }
+
+    getLimit() {
+      return this.limit;
+    }
+
+    getOffset(limit, index) {
+      return this.limit * this.index;
+    }
+
+    render(data) {
+
+      function itemMarkup(item, index) {
           return (
             `<article class="item item-${index}">` +
               `<img src="${item.preview.medium}" "alt="stream preview image"/>` +
@@ -23,13 +57,13 @@ function app() {
           );
         }
 
-        var total = data._total;
-        var streams = data.streams;
+        this.total = data ? data._total : this.total;
+        this.items = data ? data.streams : this.items;
 
-        var totalMarkup = `${total}`;
-        var indexMarkup = `${index+1}/${totalPages}`;
+        const totalMarkup = `${this.total}`;
+        const indexMarkup = `${this.index+1}/${this.getTotalPages()}`;
 
-        var itemsMarkup = streams.map((item, index) => {
+        const itemsMarkup = this.items.map((item, index) => {
           return itemMarkup(item, index);
         }).join('');
 
@@ -40,88 +74,48 @@ function app() {
     }
   };
 
-  function getTotalPages(limit, total) {
-    return Math.ceil(total/limit);
-  }
+  function search(query, init, view)  {
+    const url = `https://api.twitch.tv/kraken/search/streams` +
+                `?query=${query}&limit=${view.limit}&offset=${view.getOffset()}`;
 
-  function getOffset(limit, index) {
-    return limit * index;
-  }
+    const request = new Request(url, init); 
 
-  function paginateUp() {
-    if (index <= 0) { return; }
-    index--;
-    renderView();
-  }
-
-  function paginateDown() {
-    if (index+1 >= getTotalPages(limit,total)) { return; }
-    index++;
-    renderView();
-  }
-
-  function search() {
-    searchInput = elSearchInput.value;
-    renderView();
-  }
-
-  function renderView() {
-    if (!searchInput) {
-      return;
-    }
-
-    var url = `https://api.twitch.tv/kraken/search/streams` +
-              `?query=${searchInput}&limit=${limit}&offset=${getOffset(limit, index)}`;
-
-    var request = new Request(url, init); 
-
-    fetch(request).then(function(response) {
-      var contentType = response.headers.get("content-type");
+    fetch(request).then((response) => {
+      const contentType = response.headers.get("content-type");
       if(contentType && contentType.indexOf("application/json") !== -1) {
-        return response.json().then(function(json) {
-          total = json._total;
-          view.render(json, index, getTotalPages(limit, json._total));
+        return response.json().then((json) => {
+          view.render(json);
         });
       } else {
         console.log("Oops, we haven't got JSON!");
       }
     });
   }
-  
-  var clienId = 'v4cfvv7i7crntrggfxp0zzb2h3l3pk';
 
-  var headers = new Headers();
-  headers.append('Accept', 'application/vnd.twitchtv.v5+json');
-  headers.append('Client-ID', clienId);
+  const init = { 
+    method: 'GET',
+    headers: {
+      'Accept': 'application/vnd.twitchtv.v5+json',
+      'Client-ID': clientId
+    },
+    mode: 'jsonp',
+    cache: 'default' 
+  };
 
-  var init = { method: 'GET',
-               headers: headers,
-               mode: 'jsonp',
-               cache: 'default' };
+  const elSearchInput = document.body.querySelectorAll('.search-input')[0];
 
-  var searchInput = '';
-  var index = 0;
-  var limit = 50;
-  var total = null;
-
-  var view = new View();
-
-  var elBack = document.body.querySelectorAll('.back')[0];
-  var elForward = document.body.querySelectorAll('.forward')[0];
-  var elSearchInput = document.body.querySelectorAll('.search-input')[0];
-
-  elBack.addEventListener('click', paginateUp);
-  elForward.addEventListener('click', paginateDown);
-  elSearchInput.addEventListener('keypress', function (e) {
-      var key = e.which || e.keyCode;
-      if (key === 13) {
-        search();
+  elSearchInput.addEventListener('keypress', (e) => {
+      const key = e.which || e.keyCode;
+      const value = e.target.value;
+      if (key === 13 && value) {
+        search(value, init, view);
       }
   });
+
+  let view = new View();
 }
 
 window.onload = function() {
-  app();
+  const clientId = 'v4cfvv7i7crntrggfxp0zzb2h3l3pk';
+  app(clientId);
 }
-
-
