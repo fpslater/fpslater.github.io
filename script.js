@@ -1,12 +1,24 @@
 "use strict";
 
 function app(clientId) {
-  var View = class {
 
-    constructor(limit) {
+  class View {
+    constructor(clientId) {
+      this.domain = `https://api.twitch.tv/kraken`;
+      this.init = { 
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.twitchtv.v5+json',
+          'Client-ID': clientId
+        },
+        mode: 'jsonp',
+        cache: 'default' 
+      };
+      this.query = '';
+      
       this.total = 0;
       this.index = 0;
-      this.limit = limit || 50;
+      this.limit = 50;
 
       this.elTotalItems = document.body.querySelectorAll('.total-items span')[0];
       this.elIndex = document.body.querySelectorAll('.index .indicator')[0];
@@ -15,25 +27,24 @@ function app(clientId) {
       this.elBack = document.body.querySelectorAll('.back')[0];
       this.elForward = document.body.querySelectorAll('.forward')[0];
 
-      this.elBack.addEventListener('click', this.paginateUp);
-      this.elForward.addEventListener('click', this.paginateDown);
+      this.elBack.addEventListener('click', () => this.paginateUp());
+      this.elForward.addEventListener('click', () => this.paginateDown());
     }
 
     getTotalPages() {
-      return 3;
-      // return Math.ceil(this.total/this.limit);
+      return Math.ceil(this.total/this.limit);
     }
 
     paginateUp() {
       if (this.index <= 0) { return; }
       this.index--;
-      this.render();
+      this.search();
     }
 
     paginateDown() {
       if (this.index+1 >= this.getTotalPages()) { return; }
       this.index++;
-      this.render();
+      this.search();
     }
 
     getLimit() {
@@ -44,8 +55,33 @@ function app(clientId) {
       return this.limit * this.index;
     }
 
-    render(data) {
+    search(query) {
+      if (query) {
+        this.query = query;
+        this.index = 0;
+      }
 
+      const url = this.domain +
+                  `/search/streams` +
+                  `?query=${this.query}` +
+                  `&limit=${this.limit}` +
+                  `&offset=${this.getOffset()}`;
+
+      const request = new Request(url, this.init); 
+
+      fetch(request).then((response) => {
+        const contentType = response.headers.get("content-type");
+        if(contentType && contentType.indexOf("application/json") !== -1) {
+          return response.json().then((json) => {
+            view.render(json);
+          });
+        } else {
+          console.log("Oops, we haven't got JSON!");
+        }
+      });
+    }
+
+    render(data) {
       function itemMarkup(item, index) {
           return (
             `<article class="item item-${index}">` +
@@ -74,45 +110,17 @@ function app(clientId) {
     }
   };
 
-  function search(query, init, view)  {
-    const url = `https://api.twitch.tv/kraken/search/streams` +
-                `?query=${query}&limit=${view.limit}&offset=${view.getOffset()}`;
-
-    const request = new Request(url, init); 
-
-    fetch(request).then((response) => {
-      const contentType = response.headers.get("content-type");
-      if(contentType && contentType.indexOf("application/json") !== -1) {
-        return response.json().then((json) => {
-          view.render(json);
-        });
-      } else {
-        console.log("Oops, we haven't got JSON!");
-      }
-    });
-  }
-
-  const init = { 
-    method: 'GET',
-    headers: {
-      'Accept': 'application/vnd.twitchtv.v5+json',
-      'Client-ID': clientId
-    },
-    mode: 'jsonp',
-    cache: 'default' 
-  };
-
   const elSearchInput = document.body.querySelectorAll('.search-input')[0];
 
   elSearchInput.addEventListener('keypress', (e) => {
       const key = e.which || e.keyCode;
       const value = e.target.value;
       if (key === 13 && value) {
-        search(value, init, view);
+        view.search(value);
       }
   });
 
-  let view = new View();
+  let view = new View(clientId);
 }
 
 window.onload = function() {
